@@ -3,7 +3,6 @@
 import numpy as np
 import joblib
 from get_12ECG_features import get_12ECG_features
-from sklearn.preprocessing import normalize
 
 def run_12ECG_classifier(data,header_data,classes,model):
     # Array of mean and std used for normalization
