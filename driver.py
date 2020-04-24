@@ -83,7 +83,7 @@ if __name__ == '__main__':
     num_files = len(input_files)
 
     for i, f in enumerate(input_files):
-        #print('    {}/{}...'.format(i+1, num_files))
+        print('    {}/{}...'.format(i+1, num_files))
 			
         tmp_input_file = os.path.join(input_directory, f)
         data, header_data = load_challenge_data(tmp_input_file)
