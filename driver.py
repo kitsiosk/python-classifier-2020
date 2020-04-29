@@ -82,7 +82,7 @@ if __name__ == '__main__':
     print('Extracting 12ECG features...')
     num_files = len(input_files)
 
-    for i, f in enumerate(input_files):
+    for i, f in enumerate(sorted(input_files)):
         print('    {}/{}...'.format(i+1, num_files))
 			
         tmp_input_file = os.path.join(input_directory, f)

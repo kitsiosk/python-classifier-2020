@@ -5,7 +5,7 @@ from scipy import stats
 from scipy import signal
 import scipy.integrate as integrate
 import numpy.polynomial.hermite as herm
-from scipy.signal import butter, lfilter
+from scipy.signal import butter, lfilter, medfilt, resample
 
 def detect_peaks(ecg_measurements,signal_frequency,gain):
 
@@ -152,8 +152,57 @@ def load_challenge_data(filename):
 
     return data, header_data
 
-def get_12ECG_features(data, header_data):
+def get_12ECG_features_2(data, header_data):
 
+    tmp_hea = header_data[0].split(' ')
+    ptID = tmp_hea[0]
+    num_leads = int(tmp_hea[1])
+    sample_Fs= int(tmp_hea[2])
+    gain_lead = np.zeros(num_leads)
+    filter_lowcut = 0.001
+    filter_highcut = 15.0
+    filter_order = 1
+        
+    for ii in range(num_leads):
+        tmp_hea = header_data[ii+1].split(' ')
+        gain_lead[ii] = int(tmp_hea[2].split('/')[0])
+
+
+    max_len=30*sample_Fs
+    
+    if data.shape[1] < max_len:
+        pad_len = max_len - data.shape[1]
+        pad_mat = np.zeros((12, pad_len))
+        data = np.hstack([data, pad_mat])
+    else:
+        data = data[:,0:max_len]
+    
+    filtered_data=np.zeros((12,15000))
+    data_matrix=np.zeros((12,int(max_len/2)))
+
+    for i in range(num_leads):
+       #peaks,R_index = detect_peaks(data[i],sample_Fs,gain_lead[i]) 
+    
+       #remove baseline wander
+       filtered_data[i,:]=medfilt(data[i,:])
+       
+       #remove high frequency noise
+       filtered_data[i,:]=bandpass_filter(filtered_data[i,:],filter_lowcut,filter_highcut,sample_Fs,filter_order)
+
+       #resample the signal with max_len/2 samples
+       data_matrix[i,:]=resample(filtered_data[i,:],int(max_len/2))
+       
+       #normalize 
+       data_matrix[i,:] = (data_matrix[i,:]-np.mean(data_matrix[i,:]))/np.std(data_matrix[i,:])
+
+    
+  
+    return data_matrix
+
+def get_12ECG_features(data, header_data):
+    
+    cnn_features = get_12ECG_features_2(data, header_data)
+    
     tmp_hea = header_data[0].split(' ')
     ptID = tmp_hea[0]
     num_leads = int(tmp_hea[1])
@@ -286,10 +335,12 @@ def get_12ECG_features(data, header_data):
      max_f=np.argmax(P)
 
      features = np.hstack([mean_RR,mean_Peaks,median_RR,median_Peaks,std_RR,std_Peaks,var_RR,var_Peaks,skew_RR,skew_Peaks,kurt_RR,kurt_Peaks,PSD2,max_PSD2,max_f,median_beat,features])
-
+     features = features[0:182] # Keep only the 182 features
     features_sum = np.sum(features)
     check = np.isnan(features_sum)
     if check:
         features = np.zeros(features.size)
-        
-    return features
+    
+    return { 'cnn_features': cnn_features,
+                    'features': features }
+    
