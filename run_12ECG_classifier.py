@@ -9,8 +9,8 @@ def run_12ECG_classifier(data,header_data,classes,model):
     cnn = model['cnn']
     
     # Array of mean and std used for normalization
-    mean = np.asarray(joblib.load('mean.sav'))[0:182]
-    std = np.asarray(joblib.load('std.sav'))[0:182]
+    mean = np.asarray(joblib.load('mean.sav'))
+    std = np.asarray(joblib.load('std.sav'))
 
     num_classes = len(classes)
     current_label = np.zeros(num_classes, dtype=int)
@@ -28,12 +28,13 @@ def run_12ECG_classifier(data,header_data,classes,model):
     cnn_feats_reshape = cnn_features.reshape(1, 7500, 12)
     
     score1 = nn.predict(feats_reshape)
-    score2 = cnn.predict(cnn_feats_reshape)
+    # score2 = cnn.predict(cnn_feats_reshape)
+    score2 = 0
     threshold = 0.1
     # weight for the weighted average ensembling(w for CNN, 1-w for NN)
-    w = 0.72
+    w = 0
     for i in range(num_classes):
-        score = score1[0][i]*(1-w) + score2[0][i]*w
+        score = score1[0][i]*(1-w) #+ score2[0][i]*w
         if score>= threshold:
             current_label[i] = 1
         current_score[i] = score
@@ -42,9 +43,9 @@ def run_12ECG_classifier(data,header_data,classes,model):
 
 def load_12ECG_model():
     # load the model from disk 
-    filename='finalized_model_auth.sav'
-    filename_cnn='finalized_model_cnn.sav'
+    filename='finalized_model_features_auth.sav'
+    # filename_cnn='finalized_model_cnn.sav'
     nn = joblib.load(filename)
-    cnn = joblib.load(filename_cnn)
-    return {'nn': nn, 'cnn': cnn}
-    return nn
+    # cnn = joblib.load(filename_cnn)
+    return {'nn': nn, 'cnn': None}
+    # return nn
